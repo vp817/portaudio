@@ -23,6 +23,43 @@
 
 #define AUDIO "/dev/dsp"
 
+int __internal__file_exists(char *filename)
+{
+    int fd = open(filename, O_RDONLY, 0);
+
+    if (fd < 0)
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+// Advanced Linux Sound Architecture (ALSA):
+//   /dev/snd/pcmC0D0p (OUTPUT)
+//   /dev/snd/pcmC0D0c (INPUT)
+void init_audio_fd()
+{
+    if (__internal__file_exists("/dev/dsp") == 0)
+    {
+        if (__internal__file_exists("/dev/snd/pcmC0D0p") == 1)
+        {
+#undef AUDIO
+#define AUDIO "/dev/snd/pcmC0D0p"
+        }
+        else if (__internal__file_exists("/dev/snd/pcmC0D0c") == 1)
+        {
+#undef AUDIO
+#define AUDIO "/dev/snd/pcmC0D0c"
+        }
+        else
+        {
+            perror(AUDIO);
+            exit(-1);
+        }
+    }
+}
+
 char buffer[NUM_BYTES];
 
 int audioDev = 0;
@@ -33,6 +70,8 @@ main (int argc, char *argv[])
     char *ptr;
     int   num;
     int   samplesize;
+
+    init_audio_fd();
 
     /********** RECORD ********************/
     /* Open audio device. */
